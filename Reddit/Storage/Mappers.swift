@@ -34,7 +34,7 @@ enum Mappers {
         return managedObject
     }
     
-    static func fromManagedObject(_ managedObject: RedditEntryMO) -> RedditEntry {
+    static func toPlainObject(_ managedObject: RedditEntryMO) -> RedditEntry {
         return RedditEntry(
             title: managedObject.title,
             author: managedObject.author,
