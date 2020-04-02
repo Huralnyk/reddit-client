@@ -7,12 +7,9 @@
 //
 
 import UIKit
+import Combine
 
-extension Date {
-    static var now: Date {
-        return Date()
-    }
-}
+private let imageCache = NSCache<NSURL, UIImage>()
 
 class RedditEntryTableViewCell: UITableViewCell, Reusable, NibLoadable {
     
@@ -20,13 +17,14 @@ class RedditEntryTableViewCell: UITableViewCell, Reusable, NibLoadable {
     @IBOutlet private weak var thumbnailView: UIImageView?
     @IBOutlet private weak var commentsCounterLabel: UILabel?
     @IBOutlet private weak var footnoteLabel: UILabel?
+    
+    private var imageDownload: AnyCancellable?
 
-    override func awakeFromNib() {
-        super.awakeFromNib()
-    }
-
-    override func setSelected(_ selected: Bool, animated: Bool) {
-        super.setSelected(selected, animated: animated)
+    override func setSelected(_ selected: Bool, animated: Bool) {}
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        imageDownload?.cancel()
     }
     
     // MARK: - Input
@@ -35,6 +33,20 @@ class RedditEntryTableViewCell: UITableViewCell, Reusable, NibLoadable {
         titleLabel?.text = viewModel.title
         commentsCounterLabel?.text = viewModel.comments
         footnoteLabel?.text = viewModel.footnote
+        
+        if let cached = imageCache.object(forKey: viewModel.image as NSURL) {
+            thumbnailView?.image = cached
+        } else {
+            imageDownload = URLSession.shared
+                .dataTaskPublisher(for: viewModel.image)
+                .map(\.data)
+                .map(UIImage.init)
+                .replaceError(with: nil)
+                .receive(on: DispatchQueue.main)
+                .sink(receiveValue: { [weak self] image in
+                    self?.thumbnailView?.image = image
+                    self?.thumbnailView?.isHidden = image == nil
+                })
+        }
     }
-    
 }
