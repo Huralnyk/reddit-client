@@ -11,9 +11,9 @@ import Foundation
 struct RedditEntry {
     let title: String
     let author: String
+    let numberOfComments: Int
     let thumbnail: URL
     let previewImage: URL?
-    let numberOfComments: Int
     let created: Date
 }
 
