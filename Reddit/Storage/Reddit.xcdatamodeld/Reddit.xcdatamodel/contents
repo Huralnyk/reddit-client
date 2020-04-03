@@ -4,24 +4,18 @@
         <attribute name="author" attributeType="String"/>
         <attribute name="created" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="name" optional="YES" attributeType="String"/>
-        <attribute name="numberOfComments" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="numberOfComments" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="previewImage" optional="YES" attributeType="Transformable" customClassName="URL"/>
+        <attribute name="score" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="thumbnail" attributeType="Transformable" customClassName="URL"/>
         <attribute name="title" attributeType="String"/>
-        <relationship name="page" maxCount="1" deletionRule="Nullify" destinationEntity="RedditPageMO" inverseName="entries" inverseEntity="RedditPageMO"/>
         <uniquenessConstraints>
             <uniquenessConstraint>
                 <constraint value="name"/>
             </uniquenessConstraint>
         </uniquenessConstraints>
     </entity>
-    <entity name="RedditPageMO" representedClassName="RedditPageMO" syncable="YES">
-        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <attribute name="nextToken" optional="YES" attributeType="String"/>
-        <relationship name="entries" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="RedditEntryMO" inverseName="page" inverseEntity="RedditEntryMO"/>
-    </entity>
     <elements>
         <element name="RedditEntryMO" positionX="-63" positionY="-18" width="128" height="163"/>
-        <element name="RedditPageMO" positionX="-54" positionY="-9" width="128" height="88"/>
     </elements>
 </model>

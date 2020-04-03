@@ -15,6 +15,7 @@ struct RedditEntry {
     let numberOfComments: Int
     let thumbnail: URL
     let previewImage: URL?
+    let score: Int
     let created: Date
 }
 
@@ -56,6 +57,7 @@ extension RedditEntry: Decodable {
         case thumbnail
         case preview
         case numberOfComments = "num_comments"
+        case score
     }
     
     init(from decoder: Decoder) throws {
@@ -66,6 +68,7 @@ extension RedditEntry: Decodable {
         self.author = try container.decode(String.self, forKey: .author)
         self.thumbnail = try container.decode(URL.self, forKey: .thumbnail)
         self.numberOfComments = try container.decode(Int.self, forKey: .numberOfComments)
+        self.score = try container.decode(Int.self, forKey: .score)
         
         let timestamp = try container.decode(TimeInterval.self, forKey: .created)
         self.created = Date(timeIntervalSince1970: timestamp)

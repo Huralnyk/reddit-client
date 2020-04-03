@@ -24,10 +24,10 @@ extension RedditEntryMO {
     @NSManaged public var name: String
     @NSManaged public var title: String
     @NSManaged public var author: String
-    @NSManaged public var numberOfComments: Int32
+    @NSManaged public var numberOfComments: Int
     @NSManaged public var thumbnail: URL
     @NSManaged public var previewImage: URL?
+    @NSManaged public var score: Int
     @NSManaged public var created: Date
-    @NSManaged public var page: RedditPageMO
 
 }
