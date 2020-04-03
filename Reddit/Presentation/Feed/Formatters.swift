@@ -49,6 +49,6 @@ enum Formatters {
     static let footnote: (String, Date) -> String = { author, date in
         let dateFormatter = RelativeDateTimeFormatter()
         let timeAgo = dateFormatter.localizedString(for: date, relativeTo: .now)
-        return "Posted by \(author) \(timeAgo)"
+        return "\(author) · \(timeAgo)"
     }
 }

@@ -10,12 +10,12 @@ import Foundation
 import CoreData
 
 enum Mappers {
-    
     static func toManagedObject(_ page: RedditPage, in context: NSManagedObjectContext) -> RedditPageMO {
         let managedObject = RedditPageMO(context: context)
         let entries = page.children.map { toManagedObject($0, in: context) }
         managedObject.entries = NSOrderedSet(array: entries)
         managedObject.nextToken = page.after
+        managedObject.date = .now
         return managedObject
     }
     
@@ -26,6 +26,7 @@ enum Mappers {
     
     static func toManagedObject(_ entry: RedditEntry, in context: NSManagedObjectContext) -> RedditEntryMO {
         let managedObject = RedditEntryMO(context: context)
+        managedObject.name = entry.name
         managedObject.title = entry.title
         managedObject.author = entry.author
         managedObject.numberOfComments = Int32(entry.numberOfComments)
@@ -37,6 +38,7 @@ enum Mappers {
     
     static func toPlainObject(_ managedObject: RedditEntryMO) -> RedditEntry {
         return RedditEntry(
+            name: managedObject.name,
             title: managedObject.title,
             author: managedObject.author,
             numberOfComments: Int(managedObject.numberOfComments),

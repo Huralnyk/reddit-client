@@ -12,16 +12,22 @@ import CoreData
 typealias VoidCallback = () -> Void
 typealias Callback<T> = (T) -> Void
 
-final class FeedProvider {
+protocol FeedProvider: AnyObject {
+    var itemsUpdateHandler: Callback<[RedditEntry]> { get set }
+    func fetchTopItems()
+    func fetchNextPage()
+}
+
+final class FeedProviderImpl: FeedProvider {
+    
+    var itemsUpdateHandler: Callback<[RedditEntry]> = { _ in }
     
     private let networkService: NetworkService
     private let coreDataStack: NSPersistentContainer
     
-    var onItemsUpdate: Callback<[RedditEntry]> = { _ in }
-    
     private var pages: [RedditPage] = [] {
         didSet {
-            onItemsUpdate(pages.flatMap { $0.children })
+            itemsUpdateHandler(pages.flatMap { $0.children })
         }
     }
     
@@ -33,36 +39,13 @@ final class FeedProvider {
         self.coreDataStack = coreDataStack
     }
     
-    func fetchItems() {
-        fetchCached(then: updateTop)
+    func fetchTopItems() {
+        fetchCached(then: { [weak self] in
+            self?.updateTopPage()
+        })
     }
     
-    private func fetchCached(then handler: @escaping VoidCallback) {
-        coreDataStack.performBackgroundTask { [weak self] context in
-            do {
-                let request: NSFetchRequest<RedditPageMO> = RedditPageMO.fetchRequest()
-                let cached = try context.fetch(request).map(Mappers.toPlaingObject)
-                self?.pages = cached
-                handler()
-            } catch {
-                print(error.localizedDescription)
-            }
-        }
-    }
-    
-    private func updateTop() {
-        let params: [String: Any] = ["limit": 10]
-        networkService.getDecoded(RedditPage.self, path: "top.json", parameters: params) { [weak self] result in
-            switch result {
-            case .success(let page):
-                self?.merge(top: page)
-            case .failure(let error):
-                print(error.localizedDescription)
-            }
-        }
-    }
-    
-    func fetchNext() {
+    func fetchNextPage() {
         guard let nextToken = pages.last?.after else { return }
         let params: [String: Any] = ["limit": 10, "after": nextToken]
         networkService.getDecoded(RedditPage.self, path: "top.json", parameters: params) { [weak self] result in
@@ -76,10 +59,50 @@ final class FeedProvider {
         }
     }
     
+    private func fetchCached(then handler: @escaping VoidCallback) {
+        coreDataStack.performBackgroundTask { [weak self] context in
+            do {
+                let request: NSFetchRequest<RedditPageMO> = RedditPageMO.fetchRequest()
+                request.sortDescriptors = [NSSortDescriptor(keyPath: \RedditPageMO.date, ascending: true)]
+                let cached = try context.fetch(request).map(Mappers.toPlaingObject)
+                self?.pages = cached
+                handler()
+            } catch {
+                print(error.localizedDescription)
+            }
+        }
+    }
+    
+    private func updateTopPage() {
+        let params: [String: Any] = ["limit": 10]
+        networkService.getDecoded(RedditPage.self, path: "top.json", parameters: params) { [weak self] result in
+            switch result {
+            case .success(let page):
+                self?.merge(top: page)
+            case .failure(let error):
+                print(error.localizedDescription)
+            }
+        }
+    }
+    
+    private func invalidateCache() {
+        let context = coreDataStack.newBackgroundContext()
+        do {
+            let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: RedditPageMO.fetchRequest())
+            try context.execute(batchDeleteRequest)
+        } catch {
+            print(error.localizedDescription)
+        }
+    }
+    
     private func store(page: RedditPage) {
         let context = coreDataStack.newBackgroundContext()
-        _ = Mappers.toManagedObject(page, in: context)
         do {
+            let fetchRequest: NSFetchRequest<RedditPageMO> = RedditPageMO.fetchRequest()
+            fetchRequest.predicate = NSPredicate(format: "nextToken == %@", page.after ?? "")
+            guard try context.count(for: fetchRequest) == 0 else { return }
+            print("storing page with token \(page.after ?? "")")
+            _ = Mappers.toManagedObject(page, in: context)
             try context.save()
         } catch {
             print(error.localizedDescription)

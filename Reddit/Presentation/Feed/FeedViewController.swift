@@ -13,8 +13,6 @@ protocol FeedViewOutput {
     func didRequestRefreshing()
     func didRequestLoadMoreItems()
     func didSelectItem(at indexPath: IndexPath)
-    func didRequestPrefetching(at indexPaths: [IndexPath])
-    func didCancelPrefetching(at indexPaths: [IndexPath])
 }
 
 protocol FeedViewInput: AnyObject {
@@ -26,14 +24,19 @@ enum FeedViewModel {
     case loaded(items: [RedditEntryViewModel])
 }
 
-class FeedViewController: UITableViewController, UITableViewDataSourcePrefetching, FeedViewInput {
+class FeedViewController: UITableViewController, FeedViewInput {
     
     enum C {
         /// number of rows until the bottom of the list, when it's time to prefetch next page
-        static let loadMoreTreshold = 3
+        static let loadMoreTreshold = 5
     }
     
-    private lazy var output: FeedViewOutput = FeedPresenter(provider: FeedProvider(), view: self)
+    private lazy var output: FeedViewOutput = FeedPresenter(
+        provider: FeedProviderImpl(),
+        view: self,
+        router: FeedRouter(viewController: self)
+    )
+    
     private var items: [RedditEntryViewModel] = []
 
     override func viewDidLoad() {
@@ -64,6 +67,7 @@ class FeedViewController: UITableViewController, UITableViewDataSourcePrefetchin
     // MARK: - Helpers
     
     private func initialSetup() {
+        title = "Popular Posts"
         tableView.register(RedditEntryTableViewCell.self)
         refreshControl = UIRefreshControl()
         refreshControl?.addTarget(self, action: #selector(onRefreshControlValueChange), for: .valueChanged)
@@ -92,15 +96,5 @@ class FeedViewController: UITableViewController, UITableViewDataSourcePrefetchin
         if (items.count - indexPath.row) < C.loadMoreTreshold {
             output.didRequestLoadMoreItems()
         }
-    }
-    
-    // MARK: - Table View Prefetching
-    
-    func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
-        output.didRequestPrefetching(at: indexPaths)
-    }
-    
-    func tableView(_ tableView: UITableView, cancelPrefetchingForRowsAt indexPaths: [IndexPath]) {
-        output.didCancelPrefetching(at: indexPaths)
     }
 }

@@ -21,6 +21,7 @@ extension RedditEntryMO {
         return NSFetchRequest<RedditEntryMO>(entityName: "RedditEntryMO")
     }
 
+    @NSManaged public var name: String
     @NSManaged public var title: String
     @NSManaged public var author: String
     @NSManaged public var numberOfComments: Int32

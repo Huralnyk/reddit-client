@@ -23,4 +23,5 @@ extension RedditPageMO {
     
     @NSManaged public var entries: NSOrderedSet
     @NSManaged public var nextToken: String?
+    @NSManaged public var date: Date
 }

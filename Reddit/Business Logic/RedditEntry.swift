@@ -9,6 +9,7 @@
 import Foundation
 
 struct RedditEntry {
+    let name: String
     let title: String
     let author: String
     let numberOfComments: Int
@@ -48,6 +49,7 @@ extension RedditEntry: Decodable {
     }
     
     enum CodingKeys: String, CodingKey {
+        case name
         case title
         case author = "author_fullname"
         case created
@@ -59,6 +61,7 @@ extension RedditEntry: Decodable {
     init(from decoder: Decoder) throws {
         let wrapperContainer = try decoder.container(keyedBy: WrapperCodingKeys.self)
         let container = try wrapperContainer.nestedContainer(keyedBy: CodingKeys.self, forKey: .data)
+        self.name = try container.decode(String.self, forKey: .name)
         self.title = try container.decode(String.self, forKey: .title)
         self.author = try container.decode(String.self, forKey: .author)
         self.thumbnail = try container.decode(URL.self, forKey: .thumbnail)

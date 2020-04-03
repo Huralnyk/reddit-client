@@ -12,42 +12,46 @@ final class FeedPresenter: FeedViewOutput {
     
     private weak var view: FeedViewInput?
     private let provider: FeedProvider
+    private let router: FeedRouter
     
-    init(provider: FeedProvider, view: FeedViewInput?) {
-        self.provider = provider
-        self.view = view
+    private var viewModels: [RedditEntryViewModel] = [] {
+        didSet {
+            view?.render(.loaded(items: viewModels))
+        }
     }
     
+    init(provider: FeedProvider, view: FeedViewInput?, router: FeedRouter) {
+        self.provider = provider
+        self.view = view
+        self.router = router
+    }
+    
+    // MARK: - View Output
+    
     func viewIsReady() {
-        provider.onItemsUpdate = { [weak self] items in
+        provider.itemsUpdateHandler = { [weak self] items in
             let viewModels = items.map(RedditEntryViewModel.init)
             DispatchQueue.main.async {
-                self?.view?.render(.loaded(items: viewModels))
+                self?.viewModels = viewModels
             }
         }
         
         view?.render(.loading)
-        provider.fetchItems()
+        provider.fetchTopItems()
     }
     
     func didRequestRefreshing() {
         view?.render(.loading)
-        provider.fetchItems()
+        provider.fetchTopItems()
     }
     
     func didRequestLoadMoreItems() {
-        provider.fetchNext()
+        provider.fetchNextPage()
     }
     
     func didSelectItem(at indexPath: IndexPath) {
-        
-    }
-    
-    func didRequestPrefetching(at indexPaths: [IndexPath]) {
-        
-    }
-    
-    func didCancelPrefetching(at indexPaths: [IndexPath]) {
-        
+        if let url = viewModels[indexPath.row].fullImageURL {
+            router.route(to: .webView(url: url))
+        }
     }
 }

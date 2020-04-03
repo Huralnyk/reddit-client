@@ -9,12 +9,10 @@
 import UIKit
 import Combine
 
-private let imageCache = NSCache<NSURL, UIImage>()
-
 class RedditEntryTableViewCell: UITableViewCell, Reusable, NibLoadable {
     
     @IBOutlet private weak var titleLabel: UILabel?
-    @IBOutlet private weak var thumbnailView: UIImageView?
+    @IBOutlet private weak var thumbnailView: UIImageView!
     @IBOutlet private weak var commentsCounterLabel: UILabel?
     @IBOutlet private weak var footnoteLabel: UILabel?
     
@@ -37,20 +35,10 @@ class RedditEntryTableViewCell: UITableViewCell, Reusable, NibLoadable {
         titleLabel?.text = viewModel.title
         commentsCounterLabel?.text = viewModel.comments
         footnoteLabel?.text = viewModel.footnote
-        
-        if let cached = imageCache.object(forKey: viewModel.image as NSURL) {
-            thumbnailView?.image = cached
-        } else {
-            imageDownload = URLSession.shared
-                .dataTaskPublisher(for: viewModel.image)
-                .map(\.data)
-                .map(UIImage.init)
-                .replaceError(with: nil)
-                .receive(on: DispatchQueue.main)
-                .sink(receiveValue: { [weak self] image in
-                    self?.thumbnailView?.image = image
-                    self?.thumbnailView?.isHidden = image == nil
-                })
-        }
+        imageDownload = viewModel.image
+            .handleEvents(receiveOutput: { [weak self] image in
+                self?.thumbnailView.isHidden = image == nil
+            })
+            .assign(to: \.image, on: thumbnailView)
     }
 }
