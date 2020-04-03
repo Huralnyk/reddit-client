@@ -20,7 +20,8 @@ enum Mappers {
     }
     
     static func toPlaingObject(_ page: RedditPageMO) -> RedditPage {
-        return RedditPage(children: page.entries.compactMap { $0 as? RedditEntry}, after: page.nextToken)
+        let children = page.entries.compactMap { $0 as? RedditEntryMO }.map(toPlainObject)
+        return RedditPage(children: children, after: page.nextToken)
     }
     
     static func toManagedObject(_ entry: RedditEntry, in context: NSManagedObjectContext) -> RedditEntryMO {

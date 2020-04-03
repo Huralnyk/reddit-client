@@ -24,6 +24,10 @@ class RedditEntryTableViewCell: UITableViewCell, Reusable, NibLoadable {
     
     override func prepareForReuse() {
         super.prepareForReuse()
+        titleLabel?.text = nil
+        thumbnailView?.image = nil
+        commentsCounterLabel?.text = nil
+        footnoteLabel?.text = nil
         imageDownload?.cancel()
     }
     

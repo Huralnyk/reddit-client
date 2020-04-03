@@ -10,7 +10,7 @@ import Foundation
 import Combine
 
 protocol NetworkService {
-    func get(path: String, parameters: [String: Any], then handler: @escaping (Result<Data, Error>) -> Void)
+    func get(path: String, parameters: [String: Any], then handler: @escaping Callback<Result<Data, Error>>)
 }
 
 final class NetworkServiceImpl: NetworkService {
@@ -24,7 +24,7 @@ final class NetworkServiceImpl: NetworkService {
         self.baseURL = baseURL
     }
     
-    func get(path: String, parameters: [String: Any], then handler: @escaping (Result<Data, Error>) -> Void) {
+    func get(path: String, parameters: [String: Any], then handler: @escaping Callback<Result<Data, Error>>) {
         let url = baseURL.appendingPathComponent(path)
         var components = URLComponents(url: url, resolvingAgainstBaseURL: true)
         components?.queryItems = parameters.map { URLQueryItem(name: $0, value: "\($1)")}
@@ -40,5 +40,24 @@ final class NetworkServiceImpl: NetworkService {
                     handler(.success(data))
                 }
             ).store(in: &requests)
+    }
+}
+
+extension NetworkService {
+    func getDecoded<T: Decodable>(_ type: T.Type, path: String, parameters: [String: Any], then handler: @escaping Callback<Result<T, Error>>) {
+        get(path: path, parameters: parameters) { result in
+            switch result {
+            case .success(let data):
+                let decoder = JSONDecoder()
+                do {
+                    let decoded = try decoder.decode(T.self, from: data)
+                    handler(.success(decoded))
+                } catch {
+                    handler(.failure(error))
+                }
+            case .failure(let error):
+                handler(.failure(error))
+            }
+        }
     }
 }

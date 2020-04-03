@@ -8,39 +8,76 @@
 
 import UIKit
 
-class FeedViewController: UITableViewController {
+protocol FeedViewOutput {
+    func viewIsReady()
+    func didRequestRefreshing()
+    func didRequestLoadMoreItems()
+    func didSelectItem(at indexPath: IndexPath)
+    func didRequestPrefetching(at indexPaths: [IndexPath])
+    func didCancelPrefetching(at indexPaths: [IndexPath])
+}
+
+protocol FeedViewInput: AnyObject {
+    func render(_ viewModel: FeedViewModel)
+}
+
+enum FeedViewModel {
+    case loading
+    case loaded(items: [RedditEntryViewModel])
+}
+
+class FeedViewController: UITableViewController, UITableViewDataSourcePrefetching, FeedViewInput {
     
-    private var viewModels: [RedditEntryViewModel] = [] {
-        didSet {
-            tableView.reloadData()
-        }
+    enum C {
+        /// number of rows until the bottom of the list, when it's time to prefetch next page
+        static let loadMoreTreshold = 3
     }
+    
+    private lazy var output: FeedViewOutput = FeedPresenter(provider: FeedProvider(), view: self)
+    private var items: [RedditEntryViewModel] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        tableView.register(RedditEntryTableViewCell.self)
-        refreshControl = UIRefreshControl()
-        refreshControl?.addTarget(self, action: #selector(didPullToRefresh), for: .valueChanged)
+        initialSetup()
+        output.viewIsReady()
+    }
+    
+    // MARK: - View Input
+    
+    func render(_ viewModel: FeedViewModel) {
+        switch viewModel {
+        case .loading:
+            refreshControl?.beginRefreshing()
+        case .loaded(let items):
+            refreshControl?.endRefreshing()
+            self.items = items
+            tableView.reloadData()
+        }
     }
     
     // MARK: - Actions
     
-    @objc private func didPullToRefresh() {
-        print(#function)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            self.refreshControl?.endRefreshing()
-        }
+    @objc private func onRefreshControlValueChange() {
+        output.didRequestRefreshing()
+    }
+    
+    // MARK: - Helpers
+    
+    private func initialSetup() {
+        tableView.register(RedditEntryTableViewCell.self)
+        refreshControl = UIRefreshControl()
+        refreshControl?.addTarget(self, action: #selector(onRefreshControlValueChange), for: .valueChanged)
     }
 
     // MARK: - Table View Data Source
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return viewModels.count
+        return items.count
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeue(RedditEntryTableViewCell.self, for: indexPath)
-        cell.render(viewModels[indexPath.row])
+        cell.render(items[indexPath.row])
         return cell
     }
     
@@ -48,7 +85,22 @@ class FeedViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        print(#function)
+        output.didSelectItem(at: indexPath)
     }
     
+    override func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        if (items.count - indexPath.row) < C.loadMoreTreshold {
+            output.didRequestLoadMoreItems()
+        }
+    }
+    
+    // MARK: - Table View Prefetching
+    
+    func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
+        output.didRequestPrefetching(at: indexPaths)
+    }
+    
+    func tableView(_ tableView: UITableView, cancelPrefetchingForRowsAt indexPaths: [IndexPath]) {
+        output.didCancelPrefetching(at: indexPaths)
+    }
 }
