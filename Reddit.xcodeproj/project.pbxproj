@@ -28,6 +28,8 @@
 		A99022162435E80F0031D162 /* RedditPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A99022152435E80F0031D162 /* RedditPage.swift */; };
 		A99022182435EF1A0031D162 /* Mappers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A99022172435EF1A0031D162 /* Mappers.swift */; };
 		A990221F2435F2100031D162 /* RedditEntryMO.swift in Sources */ = {isa = PBXBuildFile; fileRef = A990221B2435F2100031D162 /* RedditEntryMO.swift */; };
+		A99B2BE02438859E008B80FB /* Dictionary+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A99B2BDF2438859E008B80FB /* Dictionary+Extensions.swift */; };
+		A99B2BE2243885BC008B80FB /* Error+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A99B2BE1243885BC008B80FB /* Error+Extensions.swift */; };
 		A9DF874824370C26004E415E /* FeedProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9DF874724370C26004E415E /* FeedProvider.swift */; };
 		A9DF874B2437166D004E415E /* Dependencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9DF874A2437166D004E415E /* Dependencies.swift */; };
 /* End PBXBuildFile section */
@@ -68,6 +70,8 @@
 		A99022152435E80F0031D162 /* RedditPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedditPage.swift; sourceTree = "<group>"; };
 		A99022172435EF1A0031D162 /* Mappers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mappers.swift; sourceTree = "<group>"; };
 		A990221B2435F2100031D162 /* RedditEntryMO.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RedditEntryMO.swift; sourceTree = "<group>"; };
+		A99B2BDF2438859E008B80FB /* Dictionary+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Dictionary+Extensions.swift"; sourceTree = "<group>"; };
+		A99B2BE1243885BC008B80FB /* Error+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Error+Extensions.swift"; sourceTree = "<group>"; };
 		A9DF874724370C26004E415E /* FeedProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedProvider.swift; sourceTree = "<group>"; };
 		A9DF874A2437166D004E415E /* Dependencies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dependencies.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -152,6 +156,7 @@
 			children = (
 				A990220F2435CA730031D162 /* Application */,
 				A990220E2435CA630031D162 /* Business Logic */,
+				A99B2BDE24388575008B80FB /* Core */,
 				A990220C2435C9FE0031D162 /* Presentation */,
 				A990220B2435C9D70031D162 /* Resources */,
 				A990220D2435CA420031D162 /* Services */,
@@ -225,6 +230,15 @@
 				A9DF874A2437166D004E415E /* Dependencies.swift */,
 			);
 			path = Application;
+			sourceTree = "<group>";
+		};
+		A99B2BDE24388575008B80FB /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				A99B2BDF2438859E008B80FB /* Dictionary+Extensions.swift */,
+				A99B2BE1243885BC008B80FB /* Error+Extensions.swift */,
+			);
+			path = Core;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -337,12 +351,14 @@
 				A92DB8BC24375D7700BFEDDA /* Formatters.swift in Sources */,
 				A99021E62435C9AF0031D162 /* AppDelegate.swift in Sources */,
 				A99022182435EF1A0031D162 /* Mappers.swift in Sources */,
+				A99B2BE02438859E008B80FB /* Dictionary+Extensions.swift in Sources */,
 				A92DB8C024375D7700BFEDDA /* FeedPresenter.swift in Sources */,
 				A9DF874824370C26004E415E /* FeedProvider.swift in Sources */,
 				A9018FB324361E400093753A /* Date+Extensions.swift in Sources */,
 				A92DB8BF24375D7700BFEDDA /* RedditEntryViewModel.swift in Sources */,
 				A99022162435E80F0031D162 /* RedditPage.swift in Sources */,
 				A9DF874B2437166D004E415E /* Dependencies.swift in Sources */,
+				A99B2BE2243885BC008B80FB /* Error+Extensions.swift in Sources */,
 				A92DB8BD24375D7700BFEDDA /* FeedRouter.swift in Sources */,
 				A99021E82435C9AF0031D162 /* SceneDelegate.swift in Sources */,
 				A99022122435CB1B0031D162 /* RedditEntry.swift in Sources */,

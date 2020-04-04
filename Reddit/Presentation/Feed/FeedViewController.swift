@@ -27,8 +27,8 @@ enum FeedViewModel {
 class FeedViewController: UITableViewController, FeedViewInput {
     
     enum C {
-        /// number of rows until the bottom of the list, when it's time to prefetch next page
-        static let loadMoreTreshold = 5
+        // 80% scroll through content to request next page
+        static let newPageTreshold = 0.8
     }
     
     private lazy var output: FeedViewOutput = FeedPresenter(
@@ -93,7 +93,7 @@ class FeedViewController: UITableViewController, FeedViewInput {
     }
     
     override func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        if (items.count - indexPath.row) < C.loadMoreTreshold {
+        if Double(indexPath.row) / Double(items.count) > C.newPageTreshold {
             output.didRequestLoadMoreItems()
         }
     }

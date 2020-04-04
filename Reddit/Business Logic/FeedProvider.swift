@@ -18,12 +18,19 @@ protocol FeedProvider: AnyObject {
     func fetchNextPage()
 }
 
-final class FeedProviderImpl: FeedProvider {
+final class FeedProviderImpl: NSObject, FeedProvider {
+    
+    enum C {
+        static let path = "top.json"
+        static let parameters: [String: Any] = ["limit": 10]
+    }
     
     var itemsUpdateHandler: Callback<[RedditEntry]> = { _ in }
     
     private let networkService: NetworkService
-    private let coreDataStack: NSPersistentContainer
+    private let persistentContainer: NSPersistentContainer
+    private let fetchedResultsController: NSFetchedResultsController<RedditEntryMO>
+    private var isFetchingNextPage = false
     
     private var entries: [RedditEntry] = [] {
         didSet {
@@ -33,79 +40,64 @@ final class FeedProviderImpl: FeedProvider {
     
     init(
         networkService: NetworkService = Dependencies.networkService,
-        coreDataStack: NSPersistentContainer = Dependencies.persistentContainer
+        persistentContainer: NSPersistentContainer = Dependencies.persistentContainer
     ) {
         self.networkService = networkService
-        self.coreDataStack = coreDataStack
+        self.persistentContainer = persistentContainer
+        self.fetchedResultsController = NSFetchedResultsController<RedditEntryMO>(
+            fetchRequest: .all(),
+            managedObjectContext: persistentContainer.viewContext,
+            sectionNameKeyPath: nil,
+            cacheName: nil
+        )
+        super.init()
+        self.fetchedResultsController.delegate = self
     }
     
     func fetchTopItems() {
-        fetchCached(then: { [weak self] in
-            self?.updateTopPage()
-        })
+        networkService.getDecoded(RedditPage.self, path: C.path, parameters: C.parameters) { [weak self] result in
+            guard let self = self else { return }
+            self.handle(result: result)
+        }
+        perfromThrowing(fetchedResultsController.performFetch)
+        entries = fetchedResultsController.fetchedObjects?.map(Mappers.toPlainObject) ?? []
     }
     
     func fetchNextPage() {
-        guard let nextToken = entries.last?.name else { return }
-        let params: [String: Any] = ["limit": 10, "after": nextToken]
-        networkService.getDecoded(RedditPage.self, path: "top.json", parameters: params) { [weak self] result in
-            switch result {
-            case .success(let page):
-                self?.entries.append(contentsOf: page.children)
-                self?.store(page: page)
-            case .failure(let error):
-                print(error.localizedDescription)
-            }
+        guard !isFetchingNextPage, let lastEntry = entries.last?.name else { return }
+        
+        isFetchingNextPage = true
+        let parameters = C.parameters.adding(value: lastEntry, forKey: "after")
+        networkService.getDecoded(RedditPage.self, path: C.path, parameters: parameters) { [weak self] result in
+            guard let self = self else { return }
+            self.isFetchingNextPage = false
+            self.handle(result: result)
         }
     }
     
-    private func fetchCached(then handler: @escaping VoidCallback) {
-        coreDataStack.performBackgroundTask { [weak self] context in
-            do {
-                let request: NSFetchRequest<RedditEntryMO> = RedditEntryMO.fetchRequest()
-                request.sortDescriptors = [NSSortDescriptor(keyPath: \RedditEntryMO.score, ascending: false)]
-                self?.entries = try context.fetch(request).map(Mappers.toPlainObject)
-                handler()
-            } catch {
-                print(error.localizedDescription)
-            }
-        }
-    }
+    // MARK: - Helpers
     
-    private func updateTopPage() {
-        let params: [String: Any] = ["limit": 10]
-        networkService.getDecoded(RedditPage.self, path: "top.json", parameters: params) { [weak self] result in
-            switch result {
-            case .success(let page):
-                self?.merge(top: page)
-            case .failure(let error):
-                print(error.localizedDescription)
-            }
-        }
-    }
-    
-    private func store(page: RedditPage) {
-        let context = coreDataStack.newBackgroundContext()
-        do {
-            _ = page.children.map { Mappers.toManagedObject($0, in: context) }
-            let count = try context.count(for: RedditEntryMO.fetchRequest())
-            print("total entries: \(count)")
-            try context.save()
-        } catch {
+    private func handle(result: Result<RedditPage, Error>) {
+        switch result {
+        case .success(let page):
+            sync(entries: page.children)
+        case .failure(let error):
             print(error.localizedDescription)
         }
     }
     
-    private func merge(top: RedditPage) {
-        if entries.first?.name != top.children.first?.name {
-            entries = top.children
-            store(page: top)
+    private func sync(entries: [RedditEntry]) {
+        let context = persistentContainer.newBackgroundContext()
+        context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+        _ = entries.map { Mappers.toManagedObject($0, in: context)}
+        if context.hasChanges {
+            perfromThrowing(context.save)
         }
     }
-    
-    private func append(page: RedditPage) {
-        if let first = page.children.first, !entries.contains(where: { $0.name == first.name }) {
-            entries.append(contentsOf: page.children)
-        }
+}
+
+extension FeedProviderImpl: NSFetchedResultsControllerDelegate {
+    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        entries = fetchedResultsController.fetchedObjects?.map(Mappers.toPlainObject) ?? []
     }
 }

@@ -16,11 +16,6 @@ public class RedditEntryMO: NSManagedObject {
 }
 
 extension RedditEntryMO {
-
-    @nonobjc public class func fetchRequest() -> NSFetchRequest<RedditEntryMO> {
-        return NSFetchRequest<RedditEntryMO>(entityName: "RedditEntryMO")
-    }
-
     @NSManaged public var name: String
     @NSManaged public var title: String
     @NSManaged public var author: String
@@ -29,5 +24,12 @@ extension RedditEntryMO {
     @NSManaged public var previewImage: URL?
     @NSManaged public var score: Int
     @NSManaged public var created: Date
+}
 
+extension NSFetchRequest where ResultType == RedditEntryMO {
+    static func all() -> NSFetchRequest<RedditEntryMO> {
+        let request = NSFetchRequest<RedditEntryMO>(entityName: "RedditEntryMO")
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \RedditEntryMO.score, ascending: false)]
+        return request
+    }
 }
